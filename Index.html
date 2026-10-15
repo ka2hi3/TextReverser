@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TextReverser</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(720px, 100%);
+      padding: 32px;
+      background: #ffffff;
+      border: 1px solid #dce1e7;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .description {
+      margin: 0 0 24px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 14px;
+      resize: vertical;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #111827;
+      font: inherit;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+    }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .output-header label {
+      margin: 0;
+    }
+
+    button {
+      min-width: 112px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 9px;
+      background: #2563eb;
+      color: #ffffff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s;
+    }
+
+    button:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    #output {
+      min-height: 140px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f8fafc;
+    }
+
+    #status {
+      min-height: 20px;
+      margin: 10px 0 0;
+      color: #15803d;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    @media (max-width: 560px) {
+      main {
+        padding: 22px;
+      }
+
+      .output-header {
+        align-items: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>TextReverser</h1>
+    <p class="description">入力した文字列をリアルタイムで逆順にします。</p>
+
+    <label for="inputText">入力テキスト</label>
+    <textarea id="inputText" placeholder="ここに文字を入力してください" autofocus></textarea>
+
+    <div class="output-header">
+      <label for="output">反転結果</label>
+      <button id="copyButton" type="button" disabled>コピー</button>
+    </div>
+    <textarea id="output" readonly aria-live="polite"></textarea>
+    <p id="status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const output = document.getElementById('output');
+    const copyButton = document.getElementById('copyButton');
+    const status = document.getElementById('status');
+
+    function reverseText(text) {
+      if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const segmenter = new Intl.Segmenter('ja', { granularity: 'grapheme' });
+        return Array.from(segmenter.segment(text), part => part.segment).reverse().join('');
+      }
+      return Array.from(text).reverse().join('');
+    }
+
+    function updateOutput() {
+      output.value = reverseText(inputText.value);
+      copyButton.disabled = output.value.length === 0;
+      status.textContent = '';
+    }
+
+    async function copyResult() {
+      if (!output.value) return;
+
+      try {
+        await navigator.clipboard.writeText(output.value);
+      } catch (error) {
+        output.focus();
+        output.select();
+        const copied = document.execCommand('copy');
+        output.setSelectionRange(0, 0);
+        inputText.focus();
+        if (!copied) throw error;
+      }
+
+      status.textContent = 'クリップボードにコピーしました。';
+      window.setTimeout(() => {
+        status.textContent = '';
+      }, 1800);
+    }
+
+    inputText.addEventListener('input', updateOutput);
+    copyButton.addEventListener('click', copyResult);
+  </script>
+</body>
+</html>
